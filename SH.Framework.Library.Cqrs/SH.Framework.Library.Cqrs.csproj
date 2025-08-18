@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <PackageId>SH.Framework.Library.Cqrs</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Muharrem Kaçkın</Authors>
+        <Company>Strawhats Company</Company>
+        <Description>A lightweight and high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 9.0. Provides clean architecture and separated responsibilities in modern .NET applications with support for Request/Response, Notifications, and Pipeline Behaviors. Features comprehensive interfaces for dependency injection integration and projector-based query operations.</Description>
+        <PackageProjectUrl>https://github.com/muharremkackin/sh-framework-cqrs</PackageProjectUrl>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageTags>asp.net;cqrs</PackageTags>
+        <RepositoryUrl>https://github.com/muharremkackin/sh-framework-cqrs</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="" />
+        <None Include="LICENSE" Pack="true" PackagePath="" />
+    </ItemGroup>
+
+</Project>
