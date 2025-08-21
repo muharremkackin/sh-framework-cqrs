@@ -52,36 +52,4 @@ public static class RegisterCqrsLibrary
             foreach (var @interface in interfaces) services.AddScoped(@interface, handlerType);
         }
     }
-
-    private static void RegisterRequestBehaviors(IServiceCollection services, Assembly assembly)
-    {
-        var behaviorTypes = assembly.GetTypes()
-            .Where(t => t.GetInterfaces()
-                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IPipelineBehavior<,>)))
-            .Where(t => !t.IsAbstract && !t.IsInterface);
-
-        foreach (var behaviorType in behaviorTypes)
-        {
-            var interfaces = behaviorType.GetInterfaces()
-                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IPipelineBehavior<,>));
-
-            foreach (var @interface in interfaces) services.AddScoped(@interface, behaviorType);
-        }
-    }
-
-    private static void RegisterNotificationBehaviors(IServiceCollection services, Assembly assembly)
-    {
-        var behaviorTypes = assembly.GetTypes()
-            .Where(t => t.GetInterfaces()
-                .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(INotificationBehavior<>)))
-            .Where(t => !t.IsAbstract && !t.IsInterface);
-
-        foreach (var behaviorType in behaviorTypes)
-        {
-            var interfaces = behaviorType.GetInterfaces()
-                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(INotificationBehavior<>));
-
-            foreach (var @interface in interfaces) services.AddScoped(@interface, behaviorType);
-        }
-    }
 }

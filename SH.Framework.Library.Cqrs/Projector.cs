@@ -7,6 +7,9 @@ public class Projector(IServiceProvider provider) : IProjector
     public async Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        
         var requestType = request.GetType();
         var responseType = typeof(TResponse);
 
@@ -36,6 +39,9 @@ public class Projector(IServiceProvider provider) : IProjector
         CancellationToken cancellationToken = default)
         where TNotification : INotification
     {
+        ArgumentNullException.ThrowIfNull(notification);
+        cancellationToken.ThrowIfCancellationRequested();
+        
         var notificationType = notification.GetType();
         var behaviorType = typeof(INotificationBehavior<>).MakeGenericType(notificationType);
         var behaviors = provider.GetServices(behaviorType).Cast<object>().Reverse();
@@ -61,7 +67,16 @@ public class Projector(IServiceProvider provider) : IProjector
         var requestType = request.GetType();
         var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, typeof(TResponse));
 
-        var handler = provider.GetRequiredService(handlerType);
+        var handlers = provider.GetServices(handlerType).ToList();
+        switch (handlers.Count)
+        {
+            case 0:
+                throw new HandlerNotFoundException(requestType);
+            case > 1:
+                throw new MultipleHandlersFoundException(requestType, handlers.Count);
+        }
+
+        var handler = handlers.First();
         var method = handlerType.GetMethod("HandleAsync");
 
         var result = method!.Invoke(handler, [request, cancellationToken]);
