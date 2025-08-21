@@ -1,0 +1,6 @@
+@SH.Framework.Library.Cqrs.Api_HostAddress = http://localhost:5007
+
+GET {{SH.Framework.Library.Cqrs.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

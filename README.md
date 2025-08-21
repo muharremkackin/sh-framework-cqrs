@@ -1,95 +1,83 @@
 # SH.Framework.Library.Cqrs
 
-A lightweight and high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 9.0. Provides clean architecture and separated responsibilities in modern .NET applications with support for Request/Response, Notifications, and Pipeline Behaviors.
+[![NuGet Version](https://img.shields.io/nuget/v/SH.Framework.Library.Cqrs.svg)](https://www.nuget.org/packages/SH.Framework.Library.Cqrs/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/SH.Framework.Library.Cqrs.svg)](https://www.nuget.org/packages/SH.Framework.Library.Cqrs/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Features
+A lightweight, high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 9.0. This library promotes clean architecture and separation of concerns in modern .NET applications through well-defined interfaces and patterns.
 
-- **Request/Response Pattern**: Handle commands and queries with typed responses
-- **Notification System**: Publish and handle domain events asynchronously
-- **Pipeline Behaviors**: Add cross-cutting concerns like validation, logging, and caching
-- **Dependency Injection Integration**: Seamless integration with Microsoft.Extensions.DependencyInjection
-- **High Performance**: Optimized for minimal overhead and maximum throughput
-- **Clean Architecture**: Promotes separation of concerns and maintainable code
+## 🚀 Features
 
-## Installation
+- **🎯 Request/Response Pattern**: Handle commands and queries with strongly-typed responses
+- **📢 Event-Driven Architecture**: Publish and handle domain events asynchronously
+- **🔄 Pipeline Behaviors**: Add cross-cutting concerns like validation, logging, caching, and authorization
+- **💉 Dependency Injection Ready**: Seamless integration with Microsoft.Extensions.DependencyInjection
+- **⚡ High Performance**: Optimized for minimal overhead and maximum throughput
+- **🏗️ Clean Architecture**: Promotes separation of concerns and maintainable code
+- **🔍 Auto-Discovery**: Automatic registration of handlers via assembly scanning
+- **🛡️ Exception Handling**: Comprehensive error handling with custom exceptions
+- **🔄 Cancellation Support**: Full support for cooperative cancellation throughout the pipeline
+
+## 📦 Installation
 
 ```bash
 dotnet add package SH.Framework.Library.Cqrs
 ```
 
-## Quick Start
+## 🛠️ Quick Start
 
 ### 1. Register the Library
+
+Add CQRS services to your dependency injection container during application startup:
 
 ```csharp
 using SH.Framework.Library.Cqrs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register CQRS library with assemblies containing handlers
+// Register CQRS library with assembly scanning
 builder.Services.AddCqrsLibraryConfiguration(
     Assembly.GetExecutingAssembly(),
-    typeof(MyHandler).Assembly
+    typeof(SomeHandlerInAnotherAssembly).Assembly
 );
 
 var app = builder.Build();
 ```
 
-### 2. Create a Command/Query
+### 2. Define Requests and Handlers
 
+**Command Example (No Response):**
 ```csharp
-// Command (no return value)
 public record CreateUserCommand(string Name, string Email) : IRequest;
 
-// Query (with return value)
-public record GetUserQuery(int Id) : IRequest<UserDto>;
-
-// Response DTO
-public record UserDto(int Id, string Name, string Email);
-```
-
-### 3. Create Handlers
-
-```csharp
-// Command Handler
-public class CreateUserHandler : IRequestHandler<CreateUserCommand>
+public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand>
 {
-    private readonly IUserRepository _repository;
-
-    public CreateUserHandler(IUserRepository repository)
+    public async Task<Unit> HandleAsync(CreateUserCommand request, CancellationToken cancellationToken = default)
     {
-        _repository = repository;
-    }
-
-    public async Task<Unit> HandleAsync(CreateUserCommand request, 
-        CancellationToken cancellationToken = default)
-    {
-        var user = new User(request.Name, request.Email);
-        await _repository.SaveAsync(user);
+        // Handle user creation logic
+        await Task.CompletedTask;
         return Unit.Value;
     }
 }
+```
 
-// Query Handler
-public class GetUserHandler : IRequestHandler<GetUserQuery, UserDto>
+**Query Example (With Response):**
+```csharp
+public record GetUserQuery(int Id) : IRequest<UserDto>;
+
+public record UserDto(int Id, string Name, string Email);
+
+public class GetUserQueryHandler : IRequestHandler<GetUserQuery, UserDto>
 {
-    private readonly IUserRepository _repository;
-
-    public GetUserHandler(IUserRepository repository)
+    public async Task<UserDto> HandleAsync(GetUserQuery request, CancellationToken cancellationToken = default)
     {
-        _repository = repository;
-    }
-
-    public async Task<UserDto> HandleAsync(GetUserQuery request, 
-        CancellationToken cancellationToken = default)
-    {
-        var user = await _repository.GetByIdAsync(request.Id);
-        return new UserDto(user.Id, user.Name, user.Email);
+        // Fetch user from database
+        return new UserDto(request.Id, "John Doe", "john@example.com");
     }
 }
 ```
 
-### 4. Use the Projector
+### 3. Use the Projector in Controllers
 
 ```csharp
 [ApiController]
@@ -104,23 +92,25 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateUser(CreateUserCommand command)
+    public async Task<IActionResult> CreateUser(CreateUserCommand command, CancellationToken cancellationToken)
     {
-        await _projector.SendAsync(command);
+        await _projector.SendAsync(command, cancellationToken);
         return Ok();
     }
 
     [HttpGet("{id}")]
-    public async Task<UserDto> GetUser(int id)
+    public async Task<UserDto> GetUser(int id, CancellationToken cancellationToken)
     {
-        return await _projector.SendAsync(new GetUserQuery(id));
+        return await _projector.SendAsync(new GetUserQuery(id), cancellationToken);
     }
 }
 ```
 
-## Notifications (Domain Events)
+## 📡 Notifications (Domain Events)
 
-### 1. Create a Notification
+Notifications enable event-driven architecture by allowing you to publish domain events that can be handled by multiple handlers asynchronously.
+
+### 1. Define Notifications
 
 ```csharp
 public record UserCreatedNotification(int UserId, string Name, string Email) : INotification;
@@ -129,38 +119,21 @@ public record UserCreatedNotification(int UserId, string Name, string Email) : I
 ### 2. Create Notification Handlers
 
 ```csharp
-// Email notification handler
-public class SendWelcomeEmailHandler : INotificationHandler<UserCreatedNotification>
+public class UserCreatedEmailHandler : INotificationHandler<UserCreatedNotification>
 {
-    private readonly IEmailService _emailService;
-
-    public SendWelcomeEmailHandler(IEmailService emailService)
+    public async Task HandleAsync(UserCreatedNotification notification, CancellationToken cancellationToken = default)
     {
-        _emailService = emailService;
-    }
-
-    public async Task HandleAsync(UserCreatedNotification notification, 
-        CancellationToken cancellationToken = default)
-    {
-        await _emailService.SendWelcomeEmailAsync(notification.Email, notification.Name);
+        // Send welcome email
+        await SendWelcomeEmailAsync(notification.Email);
     }
 }
 
-// Audit log handler
-public class LogUserCreationHandler : INotificationHandler<UserCreatedNotification>
+public class UserCreatedAuditHandler : INotificationHandler<UserCreatedNotification>
 {
-    private readonly ILogger<LogUserCreationHandler> _logger;
-
-    public LogUserCreationHandler(ILogger<LogUserCreationHandler> logger)
+    public async Task HandleAsync(UserCreatedNotification notification, CancellationToken cancellationToken = default)
     {
-        _logger = logger;
-    }
-
-    public async Task HandleAsync(UserCreatedNotification notification, 
-        CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation("User created: {UserId} - {Name}", 
-            notification.UserId, notification.Name);
+        // Log user creation for audit purposes
+        await LogUserCreationAsync(notification.UserId);
     }
 }
 ```
@@ -168,35 +141,33 @@ public class LogUserCreationHandler : INotificationHandler<UserCreatedNotificati
 ### 3. Publish Notifications
 
 ```csharp
-public class CreateUserHandler : IRequestHandler<CreateUserCommand>
+public class CreateUserCommandHandler : IRequestHandler<CreateUserCommand>
 {
-    private readonly IUserRepository _repository;
     private readonly IProjector _projector;
 
-    public CreateUserHandler(IUserRepository repository, IProjector projector)
+    public CreateUserCommandHandler(IProjector projector)
     {
-        _repository = repository;
         _projector = projector;
     }
 
-    public async Task<Unit> HandleAsync(CreateUserCommand request, 
-        CancellationToken cancellationToken = default)
+    public async Task<Unit> HandleAsync(CreateUserCommand request, CancellationToken cancellationToken = default)
     {
-        var user = new User(request.Name, request.Email);
-        await _repository.SaveAsync(user);
-
-        // Publish notification
-        var notification = new UserCreatedNotification(user.Id, user.Name, user.Email);
-        await _projector.PublishAsync(notification, cancellationToken);
-
+        // Create user logic
+        var userId = await CreateUserAsync(request.Name, request.Email);
+        
+        // Publish domain event
+        await _projector.PublishAsync(
+            new UserCreatedNotification(userId, request.Name, request.Email), 
+            cancellationToken);
+        
         return Unit.Value;
     }
 }
 ```
 
-## Pipeline Behaviors
+## 🔄 Pipeline Behaviors
 
-Pipeline behaviors allow you to add cross-cutting concerns like validation, logging, caching, etc.
+Pipeline behaviors allow you to add cross-cutting concerns that execute before and after your request handlers. Common use cases include validation, logging, caching, and performance monitoring.
 
 ### 1. Create a Validation Behavior
 
@@ -204,24 +175,32 @@ Pipeline behaviors allow you to add cross-cutting concerns like validation, logg
 public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
 {
-    private readonly IValidator<TRequest>? _validator;
+    private readonly IEnumerable<IValidator<TRequest>> _validators;
 
-    public ValidationBehavior(IValidator<TRequest>? validator = null)
+    public ValidationBehavior(IEnumerable<IValidator<TRequest>> validators)
     {
-        _validator = validator;
+        _validators = validators;
     }
 
-    public async Task<TResponse> HandleAsync(TRequest request, 
+    public async Task<TResponse> HandleAsync(
+        TRequest request, 
         RequestHandlerDelegate<TResponse> next, 
         CancellationToken cancellationToken = default)
     {
-        if (_validator != null)
+        if (_validators.Any())
         {
-            var validationResult = await _validator.ValidateAsync(request, cancellationToken);
-            if (!validationResult.IsValid)
-            {
-                throw new ValidationException(validationResult.Errors);
-            }
+            var context = new ValidationContext<TRequest>(request);
+            var validationResults = await Task.WhenAll(
+                _validators.Select(v => v.ValidateAsync(context, cancellationToken)));
+            
+            var failures = validationResults
+                .SelectMany(r => r.Errors)
+                .Where(f => f != null)
+                .GroupBy(x => x.PropertyName, x => x.ErrorMessage)
+                .ToDictionary(failureGroup => failureGroup.Key, failureGroup => failureGroup.ToArray());
+
+            if (failures.Any())
+                throw new CqrsValidationException(failures);
         }
 
         return await next(cancellationToken);
@@ -242,38 +221,45 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
         _logger = logger;
     }
 
-    public async Task<TResponse> HandleAsync(TRequest request, 
+    public async Task<TResponse> HandleAsync(
+        TRequest request, 
         RequestHandlerDelegate<TResponse> next, 
         CancellationToken cancellationToken = default)
     {
         var requestName = typeof(TRequest).Name;
-        
-        _logger.LogInformation("Handling {RequestName}", requestName);
-        
-        var stopwatch = Stopwatch.StartNew();
-        var response = await next(cancellationToken);
-        stopwatch.Stop();
+        var requestId = request is IHasRequestId hasId ? hasId.RequestId : Guid.NewGuid();
 
-        _logger.LogInformation("Handled {RequestName} in {ElapsedMs}ms", 
-            requestName, stopwatch.ElapsedMilliseconds);
+        _logger.LogInformation("Handling request {RequestName} with ID {RequestId}", requestName, requestId);
 
-        return response;
+        try
+        {
+            var response = await next(cancellationToken);
+            _logger.LogInformation("Successfully handled request {RequestName} with ID {RequestId}", requestName, requestId);
+            return response;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error handling request {RequestName} with ID {RequestId}", requestName, requestId);
+            throw;
+        }
     }
 }
 ```
 
 ### 3. Register Behaviors
 
-**Note**: You need to manually register pipeline behaviors in your DI container:
-
 ```csharp
-builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+// Register behaviors manually (they execute in reverse order - LIFO)
 builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+// ValidationBehavior will execute first, then LoggingBehavior
 ```
 
-## Notification Behaviors
+## 📢 Notification Behaviors
 
-Similar to pipeline behaviors, but for notifications:
+Similar to request pipeline behaviors, notification behaviors allow you to add cross-cutting concerns to the notification publishing pipeline.
+
+### 1. Create a Notification Logging Behavior
 
 ```csharp
 public class NotificationLoggingBehavior<TNotification> : INotificationBehavior<TNotification>
@@ -286,90 +272,190 @@ public class NotificationLoggingBehavior<TNotification> : INotificationBehavior<
         _logger = logger;
     }
 
-    public async Task HandleAsync(TNotification notification, 
+    public async Task HandleAsync(
+        TNotification notification, 
         NotificationHandlerDelegate next, 
         CancellationToken cancellationToken = default)
     {
         var notificationName = typeof(TNotification).Name;
-        _logger.LogInformation("Publishing {NotificationName}", notificationName);
+        var notificationId = notification is IHasNotificationId hasId ? hasId.NotificationId : Guid.NewGuid();
 
-        await next(cancellationToken);
+        _logger.LogInformation("Publishing notification {NotificationName} with ID {NotificationId}", 
+            notificationName, notificationId);
 
-        _logger.LogInformation("Published {NotificationName}", notificationName);
+        try
+        {
+            await next(cancellationToken);
+            _logger.LogInformation("Successfully published notification {NotificationName} with ID {NotificationId}", 
+                notificationName, notificationId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error publishing notification {NotificationName} with ID {NotificationId}", 
+                notificationName, notificationId);
+            throw;
+        }
     }
 }
 ```
 
-## Request and Notification IDs
-
-The library provides interfaces for tracking requests and notifications:
+### 2. Register Notification Behaviors
 
 ```csharp
-public record CreateUserCommand(string Name, string Email) : IRequest, IHasRequestId
-{
-    public Guid RequestId { get; init; } = Guid.NewGuid();
-}
+builder.Services.AddScoped(typeof(INotificationBehavior<>), typeof(NotificationLoggingBehavior<>));
+```
 
-public record UserCreatedNotification(int UserId, string Name, string Email) : INotification, IHasNotificationId
+## 🆔 Request and Notification Identification
+
+The library provides interfaces for adding unique identifiers to requests and notifications for tracking and correlation purposes.
+
+```csharp
+public record CreateUserCommand(string Name, string Email, Guid RequestId) : IRequest, IHasRequestId;
+
+public record UserCreatedNotification(int UserId, string Name, string Email, Guid NotificationId) 
+    : INotification, IHasNotificationId;
+```
+
+## 🔧 API Reference
+
+### IProjector Interface
+
+The main entry point for sending requests and publishing notifications:
+
+```csharp
+public interface IProjector
 {
-    public Guid NotificationId { get; init; } = Guid.NewGuid();
+    // Send request with typed response
+    Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default);
+    
+    // Send request without response (returns Unit)
+    Task SendAsync(IRequest request, CancellationToken cancellationToken = default);
+    
+    // Publish notification to all registered handlers
+    Task PublishAsync<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
+        where TNotification : INotification;
 }
 ```
 
-## Error Handling
-
-Notification handlers include built-in error handling - if one handler fails, others will still execute:
+### Core Interfaces
 
 ```csharp
-// In the Projector class, notification handlers are wrapped in try-catch
-private async Task HandleNotificationCore<TNotification>(TNotification notification,
-    CancellationToken cancellationToken) where TNotification : INotification
+// Request interfaces
+public interface IRequest<out TResponse>
+public interface IRequest : IRequest<Unit>
+
+// Handler interfaces
+public interface IRequestHandler<in TRequest, TResponse> where TRequest : IRequest<TResponse>
+public interface IRequestHandler<in TRequest> : IRequestHandler<TRequest, Unit> where TRequest : IRequest<Unit>
+
+// Notification interfaces
+public interface INotification
+public interface INotificationHandler<in TNotification> where TNotification : INotification
+
+// Behavior interfaces
+public interface IPipelineBehavior<in TRequest, TResponse> where TRequest : IRequest<TResponse>
+public interface INotificationBehavior<in TNotification> where TNotification : INotification
+
+// Identification interfaces
+public interface IHasRequestId { Guid RequestId { get; } }
+public interface IHasNotificationId { Guid NotificationId { get; } }
+```
+
+## ⚠️ Exception Handling
+
+The library provides custom exceptions for different error scenarios:
+
+### HandlerNotFoundException
+Thrown when no handler is registered for a specific request type:
+```csharp
+try
 {
-    // ... handlers execution with error handling
-    var tasks = handlers.Select(async handler =>
+    await projector.SendAsync(new UnregisteredCommand());
+}
+catch (HandlerNotFoundException ex)
+{
+    // ex.RequestType contains the type that had no handler
+    Console.WriteLine($"No handler found for {ex.RequestType.Name}");
+}
+```
+
+### MultipleHandlersFoundException
+Thrown when multiple handlers are registered for the same request type:
+```csharp
+catch (MultipleHandlersFoundException ex)
+{
+    // ex.RequestType and ex.HandlerCount provide details
+    Console.WriteLine($"Found {ex.HandlerCount} handlers for {ex.RequestType.Name}");
+}
+```
+
+### CqrsValidationException
+Thrown when validation fails (typically from a validation behavior):
+```csharp
+catch (CqrsValidationException ex)
+{
+    foreach (var error in ex.Errors)
     {
-        try
-        {
-            // Handler execution
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Notification handler failed: {ex.Message}");
-            // Handler failure doesn't stop other handlers
-        }
-    });
+        Console.WriteLine($"{error.Key}: {string.Join(", ", error.Value)}");
+    }
 }
 ```
 
-## Best Practices
+## 🚀 Performance Considerations
 
-1. **Keep Handlers Simple**: Each handler should have a single responsibility
-2. **Use Notifications for Side Effects**: Commands should focus on the main operation, use notifications for side effects
-3. **Validate Early**: Use pipeline behaviors for validation before reaching handlers
-4. **Log Appropriately**: Use logging behaviors to track request execution
-5. **Handle Errors Gracefully**: Implement proper error handling in your handlers
-6. **Use Cancellation Tokens**: Always pass and respect cancellation tokens
+- **Lightweight Design**: Minimal allocations and overhead
+- **Behavior Execution**: Behaviors execute in reverse registration order (LIFO)
+- **Parallel Notifications**: Multiple notification handlers execute in parallel when possible
+- **Cancellation Support**: Full cooperative cancellation support throughout the pipeline
+- **DI Lifetimes**: Use appropriate lifetimes (typically Scoped for web applications)
 
-## Performance Considerations
+## 🔄 Cancellation Support
 
-- The library is designed for high performance with minimal allocations
-- Behaviors are executed in reverse order of registration (LIFO)
-- Notification handlers execute in parallel when possible
-- Use appropriate DI lifetimes (typically Scoped for web applications)
+All API methods support `CancellationToken` for cooperative cancellation:
 
-## Requirements
+```csharp
+public async Task<IActionResult> CreateUser(CreateUserCommand command, CancellationToken cancellationToken)
+{
+    try
+    {
+        await _projector.SendAsync(command, cancellationToken);
+        return Ok();
+    }
+    catch (OperationCanceledException)
+    {
+        return StatusCode(499); // Client Closed Request
+    }
+}
+```
 
-- .NET 9.0 or later
-- Microsoft.Extensions.DependencyInjection 9.0.8 or later
+## 📚 Advanced Usage
 
-## Contributing
+### Custom Unit Type
+The library uses a `Unit` struct for requests that don't return a value:
 
-Contributions are welcome! Please feel free to submit issues and pull requests on GitHub.
+```csharp
+public struct Unit { }
+```
 
-## License
+### Delegate Types
+```csharp
+public delegate Task NotificationHandlerDelegate(CancellationToken cancellationToken = default);
+public delegate Task<TResponse> RequestHandlerDelegate<TResponse>(CancellationToken cancellation = default);
+```
 
-This project is licensed under the MIT License - see the [LICENSE](https://opensource.org/licenses/MIT) file for details.
+## 🤝 Contributing
 
-## Repository
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
-[https://github.com/muharremkackin/sh-framework-cqrs](https://github.com/muharremkackin/sh-framework-cqrs)
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🏢 Company
+
+**Strawhats Company**  
+Created by Muharrem Kaçkın
+
+---
+
+⭐ If you find this library helpful, please consider giving it a star on GitHub!
