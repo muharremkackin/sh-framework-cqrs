@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>SH.Framework.Library.Cqrs</PackageId>
-        <Version>1.4.0</Version>
+        <Version>1.4.1</Version>
         <Authors>Muharrem Kaçkın</Authors>
         <Company>Strawhats Company</Company>
         <Description>A lightweight and high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 9.0. Provides clean architecture and separated responsibilities in modern .NET applications with support for Request/Response, Notifications, and Pipeline Behaviors. Features comprehensive interfaces for dependency injection integration and projector-based query operations.</Description>
