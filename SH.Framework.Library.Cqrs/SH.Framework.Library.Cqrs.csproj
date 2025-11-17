@@ -1,14 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>SH.Framework.Library.Cqrs</PackageId>
-        <Version>1.4.1</Version>
+        <Version>2.0.0</Version>
         <Authors>Muharrem Kaçkın</Authors>
         <Company>Strawhats Company</Company>
-        <Description>A lightweight and high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 9.0. Provides clean architecture and separated responsibilities in modern .NET applications with support for Request/Response, Notifications, and Pipeline Behaviors. Features comprehensive interfaces for dependency injection integration and projector-based query operations.</Description>
+        <Description>A lightweight and high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 10.0. Provides clean architecture and separated responsibilities in modern .NET applications with support for Request/Response, Notifications, and Pipeline Behaviors. Features comprehensive interfaces for dependency injection integration and projector-based query operations.</Description>
         <PackageProjectUrl>https://github.com/muharremkackin/sh-framework-cqrs</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>asp.net;cqrs</PackageTags>
@@ -24,10 +23,13 @@
         <DebugSymbols>true</DebugSymbols>
         <Copyright>Copyright © Strawhats Company 2024</Copyright>
         <Product>SH Framework CQRS Library</Product>
+        <TargetFrameworks>net9.0;net10.0;net8.0</TargetFrameworks>
+        <LangVersion>14</LangVersion>
+        
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
       <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
