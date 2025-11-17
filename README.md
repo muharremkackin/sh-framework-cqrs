@@ -4,7 +4,7 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/SH.Framework.Library.Cqrs.svg)](https://www.nuget.org/packages/SH.Framework.Library.Cqrs/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A lightweight, high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 9.0. This library promotes clean architecture and separation of concerns in modern .NET applications through well-defined interfaces and patterns.
+A lightweight, high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 10.0. This library promotes clean architecture and separation of concerns in modern .NET applications through well-defined interfaces and patterns.
 
 ## 🚀 Features
 
