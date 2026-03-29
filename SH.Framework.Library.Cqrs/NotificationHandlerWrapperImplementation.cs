@@ -9,13 +9,13 @@ internal sealed class NotificationHandlerWrapperImplementation<TNotification>: I
         var handlers = provider.GetServices<INotificationHandler<TNotification>>();
         var behaviors = provider.GetServices<INotificationBehavior<TNotification>>().Reverse().ToList();
 
-        NotificationHandlerDelegate next = ct =>
+        NotificationHandlerDelegate next = token =>
         {
             var tasks = handlers.Select(async handler =>
             {
                 try
                 {
-                    await handler.HandleAsync((TNotification)notification, ct).ConfigureAwait(false);
+                    await handler.HandleAsync((TNotification)notification, token).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -28,7 +28,7 @@ internal sealed class NotificationHandlerWrapperImplementation<TNotification>: I
         foreach (var behavior in behaviors)
         {
             var currentNext = next;
-            next = ct => behavior.HandleAsync((TNotification)notification, currentNext, ct);
+            next = token => behavior.HandleAsync((TNotification)notification, currentNext, token);
         }
 
         return next(cancellationToken);
