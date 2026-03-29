@@ -1,10 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System.Collections.Concurrent;
 
 namespace SH.Framework.Library.Cqrs;
 
-public class Projector(IServiceProvider provider) : IProjector
+public sealed class Projector(IServiceProvider provider) : IProjector
 {
-    private const string MethodName = "HandleAsync";
+    private static readonly ConcurrentDictionary<Type, object> RequestWrappers = new();
+    private static readonly ConcurrentDictionary<Type, INotificationHandlerWrapper> NotificationWrappers = new();
+    
     public async Task<TResponse> SendAsync<TResponse>(IRequest<TResponse> request,
         CancellationToken cancellationToken = default)
     {
@@ -12,28 +14,29 @@ public class Projector(IServiceProvider provider) : IProjector
         cancellationToken.ThrowIfCancellationRequested();
         
         var requestType = request.GetType();
-        var responseType = typeof(TResponse);
-
-        var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, responseType);
-        var behaviors = provider.GetServices(behaviorType).Cast<object>().Reverse();
-        RequestHandlerDelegate<TResponse> handler = ct => HandleRequestCore<TResponse>(request, ct);
-        foreach (var behavior in behaviors)
+        var wrapper = (IRequestHandlerWrapper<TResponse>)RequestWrappers.GetOrAdd(requestType, t =>
         {
-            var currentHandler = handler;
-            handler = ct =>
-            {
-                var method = behaviorType.GetMethod(MethodName);
-                var result = method!.Invoke(behavior, [request, currentHandler, cancellationToken]);
-                return (Task<TResponse>)result!;
-            };
-        }
+            var wrapperType = typeof(RequestHandlerWrapperImplementation<,>).MakeGenericType(t, typeof(TResponse));
 
-        return await handler(cancellationToken);
+            return Activator.CreateInstance(wrapperType)!;
+        });
+
+        return await wrapper.Handle(request, provider, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<Unit> SendAsync(IRequest request, CancellationToken cancellationToken = default)
     {
-        return await SendAsync<Unit>(request, cancellationToken);
+        return await SendAsync<Unit>(request, cancellationToken).ConfigureAwait(false);
+    }
+
+    public TResponse Send<TResponse>(IRequest<TResponse> request)
+    {
+        return SendAsync(request).GetAwaiter().GetResult();
+    }
+
+    public Unit Send(IRequest request)
+    {
+        return SendAsync(request).GetAwaiter().GetResult();
     }
 
     public async Task PublishAsync<TNotification>(TNotification notification,
@@ -44,66 +47,17 @@ public class Projector(IServiceProvider provider) : IProjector
         cancellationToken.ThrowIfCancellationRequested();
         
         var notificationType = notification.GetType();
-        var behaviorType = typeof(INotificationBehavior<>).MakeGenericType(notificationType);
-        var behaviors = provider.GetServices(behaviorType).Cast<object>().Reverse();
-
-        NotificationHandlerDelegate handler = ct => HandleNotificationCore(notification, ct);
-        foreach (var behavior in behaviors)
+        var wrapper = NotificationWrappers.GetOrAdd(notificationType, t =>
         {
-            var currentHandler = handler;
-            handler = ct =>
-            {
-                var method = behaviorType.GetMethod(MethodName);
-                var result = method!.Invoke(behavior, [notification, currentHandler, ct]);
-                return (Task)result!;
-            };
-        }
-
-        await handler(cancellationToken);
-    }
-
-    private async Task<TResponse> HandleRequestCore<TResponse>(IRequest<TResponse> request,
-        CancellationToken cancellationToken)
-    {
-        var requestType = request.GetType();
-        var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, typeof(TResponse));
-
-        var handlers = provider.GetServices(handlerType).ToList();
-        switch (handlers.Count)
-        {
-            case 0:
-                throw new HandlerNotFoundException(requestType);
-            case > 1:
-                throw new MultipleHandlersFoundException(requestType, handlers.Count);
-        }
-
-        var handler = handlers[0];
-        var method = handlerType.GetMethod(MethodName);
-
-        var result = method!.Invoke(handler, [request, cancellationToken]);
-        return await (Task<TResponse>)result!;
-    }
-
-    private async Task HandleNotificationCore<TNotification>(TNotification notification,
-        CancellationToken cancellationToken) where TNotification : INotification
-    {
-        var notificationType = notification.GetType();
-        var handlerType = typeof(INotificationHandler<>).MakeGenericType(notificationType);
-        var handlers = provider.GetServices(handlerType);
-        var tasks = handlers.Select(async handler =>
-        {
-            try
-            {
-                var method = handlerType.GetMethod(MethodName);
-                var result = method!.Invoke(handler, [notification, cancellationToken]);
-                await (Task)result!;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Notification handler failed: {ex.Message}");
-            }
+            var wrapperType = typeof(NotificationHandlerWrapperImplementation<>).MakeGenericType(t);
+            return (INotificationHandlerWrapper)Activator.CreateInstance(wrapperType)!;
         });
+        
+        await wrapper.Handle(notification, provider, cancellationToken).ConfigureAwait(false);
+    }
 
-        await Task.WhenAll(tasks);
+    public void Publish<TNotification>(TNotification notification) where TNotification : INotification
+    {
+        PublishAsync(notification).GetAwaiter().GetResult();
     }
 }

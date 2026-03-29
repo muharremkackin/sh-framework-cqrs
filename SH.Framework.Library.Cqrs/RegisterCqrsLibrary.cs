@@ -7,15 +7,19 @@ public static class RegisterCqrsLibrary
 {
     public static void AddCqrsLibraryConfiguration(this IServiceCollection services, params Assembly[] assemblies)
     {
+        services.AddCqrsLibraryConfiguration(assemblies, ServiceLifetime.Scoped);
+    }
+    public static void AddCqrsLibraryConfiguration(this IServiceCollection services, Assembly[] assemblies, ServiceLifetime lifetime = ServiceLifetime.Scoped)
+    {
         services.AddScoped<IProjector, Projector>();
         foreach (var assembly in assemblies)
         {
-            RegisterRequestHandlers(services, assembly);
-            RegisterNotificationHandlers(services, assembly);
+            services.RegisterRequestHandlers(assembly, lifetime);
+            services.RegisterNotificationHandlers(assembly, lifetime);
         }
     }
 
-    private static void RegisterRequestHandlers(this IServiceCollection services, Assembly assembly)
+    private static void RegisterRequestHandlers(this IServiceCollection services, Assembly assembly, ServiceLifetime lifetime = ServiceLifetime.Scoped)
     {
         var handlerTypes = assembly.GetTypes()
             .Where(t => t.GetInterfaces().Any(i => i.IsGenericType &&
@@ -31,11 +35,11 @@ public static class RegisterCqrsLibrary
                              i.GetGenericTypeDefinition() == typeof(IRequestHandler<>)))
                 .ToList();
 
-            foreach (var @interface in interfaces) services.AddScoped(@interface, handlerType);
+            foreach (var @interface in interfaces) services.Add(new ServiceDescriptor(@interface, handlerType, lifetime));
         }
     }
 
-    private static void RegisterNotificationHandlers(this IServiceCollection services, Assembly assembly)
+    private static void RegisterNotificationHandlers(this IServiceCollection services, Assembly assembly, ServiceLifetime lifetime = ServiceLifetime.Scoped)
     {
         var handlerTypes = assembly.GetTypes()
             .Where(t => t.GetInterfaces().Any(i => i.IsGenericType &&
@@ -49,7 +53,7 @@ public static class RegisterCqrsLibrary
                             i.GetGenericTypeDefinition() == typeof(INotificationHandler<>))
                 .ToList();
 
-            foreach (var @interface in interfaces) services.AddScoped(@interface, handlerType);
+            foreach (var @interface in interfaces) services.Add(new ServiceDescriptor(@interface, handlerType, lifetime));
         }
     }
 }

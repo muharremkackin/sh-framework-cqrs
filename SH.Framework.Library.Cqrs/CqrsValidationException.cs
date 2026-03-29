@@ -4,7 +4,7 @@ namespace SH.Framework.Library.Cqrs;
 /// Exception type representing one or more validation failures detected during a CQRS request lifecycle.
 /// Carries a structured collection of validation errors keyed by property/field name.
 /// </summary>
-public class CqrsValidationException : Exception
+public sealed class CqrsValidationException : Exception
 {
     /// <summary>
     /// Gets the collection of validation errors where the key is the property name

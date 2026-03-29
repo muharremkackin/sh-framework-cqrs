@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents an exception thrown when no handler is found for a specific request type in the CQRS framework.
 /// </summary>
-public class HandlerNotFoundException: Exception
+public sealed class HandlerNotFoundException: Exception
 {
     /// <summary>
     /// Gets the type of the request for which no handler was found.

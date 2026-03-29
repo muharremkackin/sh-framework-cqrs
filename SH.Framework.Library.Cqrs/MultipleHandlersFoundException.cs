@@ -3,7 +3,7 @@ namespace SH.Framework.Library.Cqrs;
 /// <summary>
 /// Exception that is thrown when multiple handlers are found for a specific request type in the CQRS framework.
 /// </summary>
-public class MultipleHandlersFoundException : Exception
+public sealed class MultipleHandlersFoundException : Exception
 {
     /// <summary>
     /// Gets the type of the request that caused the exception due to multiple handlers being found.
