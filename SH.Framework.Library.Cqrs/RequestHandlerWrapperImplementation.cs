@@ -17,12 +17,12 @@ internal sealed class RequestHandlerWrapperImplementation<TRequest, TResponse>: 
 
         var behaviors = provider.GetServices<IPipelineBehavior<TRequest, TResponse>>().Reverse().ToList();
         
-        RequestHandlerDelegate<TResponse> next = cancellationToken => handler.HandleAsync((TRequest)request, cancellationToken);
+        RequestHandlerDelegate<TResponse> next = token => handler.HandleAsync((TRequest)request, token);
 
         foreach (var behavior in behaviors)
         {
             var currentNext = next;
-            next = cancellationToken => behavior.HandleAsync((TRequest)request, currentNext, cancellationToken);
+            next = token => behavior.HandleAsync((TRequest)request, currentNext, token);
         }
 
         return next(cancellationToken);
