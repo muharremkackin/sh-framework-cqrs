@@ -4,7 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <PackageId>SH.Framework.Library.Cqrs</PackageId>
-        <Version>2.1.1</Version>
+        <Version>3.0.1</Version>
         <Authors>Muharrem Kaçkın</Authors>
         <Company>Strawhats Company</Company>
         <Description>A lightweight and high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 10.0. Provides clean architecture and separated responsibilities in modern .NET applications with support for Request/Response, Notifications, and Pipeline Behaviors. Features comprehensive interfaces for dependency injection integration and projector-based query operations.</Description>
@@ -24,7 +24,7 @@
         <Copyright>Copyright © Strawhats Company 2024</Copyright>
         <Product>SH Framework CQRS Library</Product>
         <TargetFrameworks>net9.0;net10.0;net8.0</TargetFrameworks>
-        <LangVersion>14</LangVersion>
+        <LangVersion>12</LangVersion>
         
     </PropertyGroup>
 
