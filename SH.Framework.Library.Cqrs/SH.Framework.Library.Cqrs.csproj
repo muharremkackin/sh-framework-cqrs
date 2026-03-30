@@ -25,7 +25,8 @@
         <Product>SH Framework CQRS Library</Product>
         <TargetFrameworks>net9.0;net10.0;net8.0</TargetFrameworks>
         <LangVersion>12</LangVersion>
-        
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
