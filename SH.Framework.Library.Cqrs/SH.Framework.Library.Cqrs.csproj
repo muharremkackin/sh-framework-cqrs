@@ -8,12 +8,11 @@
         <Authors>Muharrem Kaçkın</Authors>
         <Company>Strawhats Company</Company>
         <Description>A lightweight and high-performance library implementing the Command Query Responsibility Segregation (CQRS) pattern for .NET 10.0. Provides clean architecture and separated responsibilities in modern .NET applications with support for Request/Response, Notifications, and Pipeline Behaviors. Features comprehensive interfaces for dependency injection integration and projector-based query operations.</Description>
-        <PackageProjectUrl>https://github.com/muharremkackin/sh-framework-cqrs</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/StrawhatsCompany/sh-framework-cqrs</PackageProjectUrl>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>asp.net;cqrs</PackageTags>
-        <RepositoryUrl>https://github.com/muharremkackin/sh-framework-cqrs</RepositoryUrl>
+        <RepositoryUrl>https://github.com/StrawhatsCompany/sh-framework-cqrs</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
